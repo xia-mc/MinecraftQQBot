@@ -37,6 +37,9 @@ class _configManager:
         if not self._isExist(self.filename):
             logging.error("配置文件不存在。")
             self.create()
+            logging.critical("配置文件已生成，程序即将退出。请完成配置后重启程序。")
+            os.system("pause")
+            exit()
         self._reload()
         self.sync()
 
