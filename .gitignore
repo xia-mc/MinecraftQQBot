@@ -1,3 +1,4 @@
 
 *.pyd
 *.dll
+config.ini

@@ -2,6 +2,7 @@ import configparser
 import logging
 import os
 from dataclasses import dataclass
+from typing import Union
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] [%(levelname)s] %(message)s')
 CONFIG_FILENAME = 'config.ini'
@@ -20,8 +21,10 @@ class _Config:
     AntiSpam: bool = False  # 反刷屏
     AntiSpamInterval: float = 0.0  # 反刷屏延迟
     AntiSpamMode: str = ""  # 反刷屏模式
-    cqhttpPath: str = ""  # go-cqhttp位置
-    autoStartCqhttp: bool = False  # 自动启动go-cqhttp
+    botHost: str = "127.0.0.1"  # 支持onebot协议的机器人ip
+    botPort: int = 6700  # 支持onebot协议的机器人端口
+    botHttpPort: int = 5700  # 支持onebot协议的机器人HTTP端口
+    botToken: Union[str, None] = None  # （可选）机器人的Access-Token
 
 
 class _configManager:
@@ -50,9 +53,9 @@ class _configManager:
     def create(self):
         logging.info("创建新的配置文件...")
         self.configParser["Minecraft"] = {
-            "logPath": r"D:\PCL\.minecraft\versions\MoXingTing\logs\latest.log",
-            "chatMatch": r"\[\d\d:\d\d:\d\d] \[Render thread/INFO]: \[CHAT] ",
-            "chatStartIndex": 40
+            "logPath": r".\.minecraft\logs\latest.log",
+            "chatMatch": r"\[\d\d:\d\d:\d\d] \[Render thread/INFO]: \[System] \[CHAT] <",
+            "chatStartIndex": 48
         }
         self.configParser["QQBot"] = {
             "targetType": "group",
@@ -61,9 +64,11 @@ class _configManager:
             "AntiSpamInterval": 1.0,
             "AntiSpamMode": "normal"
         }
-        self.configParser["go-cqhttp"] = {
-            "path": "./go-cqhttp/",
-            "AutoStart": False
+        self.configParser["onebot"] = {
+            "host": "127.0.0.1",
+            "port": 6700,
+            "httpPort": 5700,
+            "token": None
         }
         with open(self.filename, "w", encoding="utf-8") as configfile:
             self.configParser.write(configfile)
@@ -88,8 +93,11 @@ class _configManager:
         self.data.AntiSpam = bool(self.configParser["QQBot"]["AntiSpam"])
         self.data.AntiSpamInterval = float(self.configParser["QQBot"]["AntiSpamInterval"])
         self.data.AntiSpamMode = self.configParser["QQBot"]["AntiSpamMode"]
-        self.data.cqhttpPath = self.configParser["go-cqhttp"]["path"]
-        self.data.autoStartCqhttp = bool(self.configParser["go-cqhttp"]["AutoStart"])
+        self.data.botHost = self.configParser["onebot"]["host"]
+        self.data.botPort = int(self.configParser["onebot"]["port"])
+        self.data.botHttpPort = int(self.configParser["onebot"]["httpPort"])
+        self.data.botToken = None \
+            if self.configParser["onebot"]["token"] == "None" else self.configParser["onebot"]["token"]
 
 
 configManager = _configManager(CONFIG_FILENAME)

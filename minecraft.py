@@ -41,15 +41,22 @@ class minecraft:
         logging.info("开始同步消息。")
         self._syncChat()
 
+    def sendMessage(self, msg: str):
+        logging.info(f"向 Minecraft 发送消息：{msg}")
+        # TODO
+        pass
+
     def getChatStream(self) -> Queue[message]:
         return self.stream
 
     def _syncChat(self):
         for line in self.file.readlines():
             if re.match(config.minecraftLogMatch, line) is not None:
-                if self.stream.qsize() == self.stream.maxsize:
+                if self.stream.qsize() >= self.stream.maxsize:
                     self.stream.get()
-                self.stream.put(message(line[1:9], line[config.minecraftLogStartIndex:].replace('\n', '')))
+                msg = message(line[1:9], line[config.minecraftLogStartIndex:].replace('\n', ''))
+                logging.info(f'收到 Minecraft 消息: {msg}')
+                self.stream.put(msg)
 
     def syncChat(self, interval: float = 0.1):
         """
