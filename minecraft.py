@@ -32,14 +32,15 @@ class minecraft:
         :param encoding: 日志文件的解码方式
         :param max_delay: 最多缓存的消息数量
         """
-        logging.info("初始化消息同步器...")
+        logging.info("启动 Minecraft 消息同步...")
         self.file = open(file, 'r', encoding=encoding)
         self.stream = Queue(maxsize=max_delay)
         self._silentSyncThread = Thread()
         self._silentSync = [True]
         self._blockUpdate = [True]
-        logging.info("开始同步消息。")
         self._syncChat()
+        self._reset()  # 不同步历史消息
+        logging.info("开始同步 Minecraft 消息")
 
     def sendMessage(self, msg: str):
         logging.info(f"向 Minecraft 发送消息：{msg}")
@@ -83,6 +84,9 @@ class minecraft:
 
         self._silentSyncThread = Thread(target=_update, name="SilentSyncThread")
         self._silentSyncThread.start()
+
+    def _reset(self):
+        self.stream = Queue(maxsize=2)
 
     def stop(self):
         self._silentSync[0] = False

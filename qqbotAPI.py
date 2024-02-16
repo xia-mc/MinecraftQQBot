@@ -30,7 +30,10 @@ class random:
         return numpy.random.normal(0, delay * 0.8)
 
 
-class _commandAPI:
+class _oldCommandAPI:
+    """
+    弃用的commandAPI
+    """
     antiSpam: bool
     antiSpamDelay: float
     antiSpamMode: Any

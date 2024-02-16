@@ -1,9 +1,14 @@
+import asyncio
+import threading
 import time
 import logging
+
+import minecraft
 import qqbotAPI as api
-from asyncio import queues
+from queue import Queue
 from typing import Union, Any
 from config import config
+from commands import commands
 from nakuru import (
     CQHTTP,
     GroupMessage,
@@ -14,7 +19,11 @@ from nakuru.entities.components import Plain, Image
 
 
 class baseTarget: ...
+
+
 class group(baseTarget): ...
+
+
 class private(baseTarget): ...
 
 
@@ -23,35 +32,47 @@ targetTypes = {
     "private": private
 }
 
+targetTypesLang = {
+    group: "群聊",
+    private: "私聊"
+}
 
 bot = CQHTTP()
 
 
 class qqbot:
     bot: CQHTTP
-    qqMsgQueue: queues.Queue
-    minecraftMsgQueue: queues.Queue
-    _targetType: baseTarget
+    qqMsgQueue: Queue[str]
+    minecraftMsgQueue: Queue[str]
+    _targetType: Union[group, private]
     _targetId: int
+    _minecraftObject: minecraft.minecraft
 
     def __init__(self, target_id: int, target_type: Union[group, private],
+                 minecraft_object: minecraft.minecraft,
                  host: str = "127.0.0.1", port: int = 6700, http_port: int = 5700, token: Union[str, None] = None):
         logging.info("初始化QQBot...")
         self.bot = CQHTTP(host, port, http_port, token)
-        self._qqMsgQueue = queues.Queue(maxsize=5)
-        self._minecraftMsgQueue = queues.Queue(maxsize=5)
+        self.qqMsgQueue = Queue(maxsize=5)
+        self._minecraftMsgQueue = Queue(maxsize=5)
         self._targetId = target_id
         self._targetType = target_type
+        self._minecraftObject = minecraft_object
 
     @bot.receiver("GroupMessage")
     @bot.receiver("FriendMessage")
     async def _(self, bot: CQHTTP, source: Union[GroupMessage, FriendMessage]):
         logging.info(f"收到 QQ消息: {source.raw_message}")
         # 处理指令
-        # TODO
-
+        if source.message[0] == "!" and len(source.message) > 1:
+            cmd = source.message[1::]
+            if cmd in commands.keys():
+                # 是有效命令
+                self._minecraftObject.sendMessage(f"/{cmd}")
         # 处理消息
-        # TODO
+        self._minecraftObject.sendMessage(
+            f"§b[§l{targetTypesLang[type(self._targetType)]}§r(§{config.targetQid}§b)]§a<{source.user_id}>§f "
+            f"{source.message}")  # 目前不支持CQ TODO
 
         """
         代码参考
@@ -75,20 +96,28 @@ class qqbot:
             await bot.sendGroupMessage(source.group_id, "唔..群服互通工作正常！")
 
     def sendMessage(self, message: str):
-        self._qqMsgQueue.put_nowait(message)
+        logging.debug("put message")
+        self.qqMsgQueue.put(message)
 
-    async def _syncMessage(self, function: Any):
-        while True:
-            await function(self._targetId, self._qqMsgQueue.get())
+    async def _syncMessage(self):
+        message = self.qqMsgQueue.get()
+        logging.info(f"向 QQ 发送消息: {message}")
+        if self._targetType is group:
+            await self.bot.sendGroupMessage(self._targetId, message)
+        elif self._targetType is private:
+            await self.bot.sendFriendMessage(self._targetId, message)
+        else:
+            raise TypeError(f"不支持的 QQ 目标类型: {self._targetType}")
 
     async def run(self):
-        await self.bot.run()
-        function = None
-        if self._targetType is group:
-            function = self.bot.sendGroupMessage
-        elif self._targetType is private:
-            function = self.bot.sendPrivateForwardMessage
-        await self._syncMessage(function)
+        logging.info("启动 QQ 消息同步")
+        self.sendMessage("▌ 群服互联已连接 ┈━═☆")
+        threading.Thread(target=await self.bot._run(), name="QQBotThread").start()  # 危险
+        while True:
+            if not self.qqMsgQueue.empty():
+                await self._syncMessage()
+            if not self._minecraftObject.getChatStream().empty():
+                self.sendMessage(f"[MC]{self._minecraftObject.getChatStream().get().message}")
 
 
 # class qqbot:

@@ -13,6 +13,8 @@ class _Config:
     """
     来自文件的配置
     """
+    minecraftVersion: str = ""  # MC版本
+    minecraftLanguage: str = ""  # MC语言
     minecraftLogPath: str = ""  # MC日志文件路径
     minecraftLogMatch: str = ""  # 正则表达式
     minecraftLogStartIndex: int = 0  # MC日志聊天信息开始的字符下标
@@ -53,6 +55,8 @@ class _configManager:
     def create(self):
         logging.info("创建新的配置文件...")
         self.configParser["Minecraft"] = {
+            "version": "1.20.1",
+            "language": "zh-cn",
             "logPath": r".\.minecraft\logs\latest.log",
             "chatMatch": r"\[\d\d:\d\d:\d\d] \[Render thread/INFO]: \[System] \[CHAT] <",
             "chatStartIndex": 48
@@ -85,6 +89,8 @@ class _configManager:
 
     def sync(self):
         logging.info("同步配置文件...")
+        self.data.minecraftVersion = self.configParser["Minecraft"]["version"]
+        self.data.minecraftLanguage = self.configParser["Minecraft"]["language"]
         self.data.minecraftLogPath = self.configParser["Minecraft"]["logPath"]
         self.data.minecraftLogMatch = self.configParser["Minecraft"]["chatMatch"]
         self.data.minecraftLogStartIndex = int(self.configParser["Minecraft"]["chatStartIndex"])

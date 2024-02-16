@@ -1,0 +1,12 @@
+{
+  "1.20.1": {
+    "zh-cn": {
+      "match": "\\[\\d\\d:\\d\\d:\\d\\d] \\[Render thread/INFO]: \\[System] \\[CHAT] 当前共有",
+      "startIndex": 48
+    },
+    "en-us": {
+      "match": "\\[\\d\\d:\\d\\d:\\d\\d] \\[Render thread/INFO]: \\[System] \\[CHAT] There are ",
+      "startIndex": 48
+    }
+  }
+}
